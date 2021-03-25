@@ -3,143 +3,47 @@ using namespace std;
 #define debug(x) cout << #x << " = " << x << endl;
 #define int long long
 
-// find the largest building
-// do a bfs from there, and make consecutive buildings at least a[i] - 1;
-// do not change it to a[i] or anything, obviously
-// continue from there in all four directions
-
-// make multiple passes until the grid follows the rules?
-
-// make a big change
-// and then multiple smaller changes
-
-int ans = 0;
-
-bool is_okay (int i, int j, int n, int m) {
-    if (i < 0 || j < 0 || i >= n || j >= m) {
-        return false;
-    }
-    return true;
-}
-
-vector <pair <int, int>> pts = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-vector <vector <bool>> visited;
-// set <pair <int, int>> visits;
-queue <pair<int, int>> q;
-
-void bfs (vector <vector <int>>& a) {
-    pair <int, int> temp = q.front();
-    int i = temp.first;
-    int j = temp.second;
-    q.pop();
-    visited[i][j] = true;
-    for (auto p : pts) {
-        if (is_okay(i + p.first, j + p.second, a.size(), a[i].size())) {
-            if (a[i + p.first][j + p.second] < a[i][j] - 1) {
-                ans += a[i][j] - 1 - a[i + p.first][j + p.second];
-                a[i + p.first][j + p.second] = a[i][j] - 1;
-            }
-        }
-    }
-    for (auto p: pts) {
-        if (is_okay(i + p.first, j + p.second, a.size(), a[i].size())) {
-            if (!visited[i + p.first][j + p.second]) {
-                // q.emplace(i + p.first, j + p.second);
-                q.push({i + p.first, j + p.second});
-            }
-        }
-    }
-    if ((int) q.size() > 0)
-        bfs(a);
-}
-
-// void bfs2 (vector <vector <int>>& a) {
-//     // if (i < j) visits.insert({i, j});
-//     // else visits.insert({j, i});
-//     pair <int, int> temp = q.front();
-//     int i = temp.first;
-//     int j = temp.second;
-//     q.pop();
-//     visits.insert({i, j});
-//     bool made_change = false;
-//     for (auto p : pts) {
-//         if (is_okay(i + p.first, j + p.second, a.size(), a[i].size())) {
-//             if (a[i + p.first][j + p.second] < a[i][j] - 1) {
-//                 ans += a[i][j] - 1 - a[i + p.first][j + p.second];
-//                 a[i + p.first][j + p.second] = a[i][j] - 1;
-//                 made_change = true;
-//             }
-//         }
-//     }
-//     if (!made_change) return;
-//     for (auto p: pts) {
-//         if (is_okay(i + p.first, j + p.second, a.size(), a[i].size())) {
-//             // if (visits.count({min(i + p.first, j + p.second), max(i + p.first, j + p.second)}) == 0) {
-//             if (visits.count({i, j}) == 0) {
-//                 q.emplace(i + p.first, j + p.second);
-//             }
-//         }
-//     }
-//     if ((int) q.size() > 0)
-//         bfs2(a);
-// }
-
 void testcase () {
-    ans = 0;
     int r, c;
     scanf("%lld%lld", &r, &c);
-    visited.resize(r);
     vector <vector <int>> a(r);
-    int m = 0;
-    int mx = 0;
-    int my = 0;
     for (int i = 0; i < r; i++) {
         a[i].resize(c);
-        visited[i].resize(c, false);
         for (int j = 0; j < c; j++) {
             scanf("%lld", &a[i][j]);
-            if (a[i][j] > m) {
-                mx = i;
-                my = j;
-                m = a[i][j];
+        }
+    }
+    int ans = 0;
+    for (int i = 0; i < r; i++) {
+        for (int j = 1; j < c; j++) {
+            if (a[i][j] < a[i][j-1] - 1) {
+                ans += a[i][j-1] - a[i][j] - 1;
+                a[i][j] = a[i][j-1] - 1;
+            }
+        }
+        for (int j = c - 2; j >= 0; j--) {
+            if (a[i][j] < a[i][j+1] - 1) {
+                ans += a[i][j+1] - a[i][j] - 1;
+                a[i][j] = a[i][j+1] - 1;
             }
         }
     }
-    q.push({mx, my});
-    // q.emplace(mx, my);
-    bfs(a);
-    q.empty();
-    for (int i = 0; i < r; i++) {
+    for (int i = 1; i < r; i++) {
         for (int j = 0; j < c; j++) {
-            visited[i][j] = false;
-        }
-    }
-    // first big change complete, continue with the grid
-    for (int i = 0; i < r; i++) {
-        for (int j = 0; j < c; j++) {
-            // q.emplace(i, j);
-            // bfs2(a);
-            // visits.clear();
-            // q.empty();
-            // aiming for correctness first
-            q.push({i, j});
-            // q.emplace(i, j);
-            // bfs(a);
-            for (int ti = 0; ti < r; ti++) {
-                for (int tj = 0; tj < c; tj++) {
-                    visited[ti][tj] = false;
-                }
+            if (a[i][j] < a[i-1][j] - 1) {
+                ans += a[i-1][j] - 1 - a[i][j];
+                a[i][j] = a[i-1][j] - 1;
             }
-            q.empty();
         }
     }
-    // printf("\n");
-    // for (int i = 0; i < r; i++) {
-        // for (int j = 0; j < c; j++) {
-            // printf("%lld ", a[i][j]);
-        // }
-        // printf("\n");
-    // }
+    for (int i = r - 2; i >= 0; i--) {
+        for (int j = 0; j < c; j++) {
+            if (a[i][j] < a[i+1][j] - 1) {
+                ans += a[i+1][j] - 1 - a[i][j];
+                a[i][j] = a[i+1][j] - 1;
+            }
+        }
+    }
     printf("%lld", ans);
 }
 
