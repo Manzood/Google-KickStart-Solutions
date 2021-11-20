@@ -9,64 +9,85 @@
 using namespace std;
 #define int long long
 
-bool change_string (string& s, string sub, map <string, string>& mp) {
-    bool changed = false;
-    string res;
-    int n = (int) s.size();
-    int m = (int) sub.size();
-    vector <bool> marked (n, false);
-    for (int i = 0; i < n; i++) {
-        if (marked[i]) continue;
-        bool found = true;
-        bool reached_end = false;
-        for (int j = 0; j < m && i + m - 1 < n; j++) {
-            if (s[i + j] != sub[j]) {
-                found = false;
-            }
-            if (j == m - 1) {
-                reached_end = true;
-            }
-        }
-        if (!found || !reached_end) {
-            res += s[i];
-        } else {
-            res += mp[sub];
-            for (int j = 0; j < m; j++) {
-                marked[i + j] = true;
-            }
-            changed = true;
-        }
-    }
-    // debug (sub);
-    // debug (res);
-    s = res;
-    return changed;
-}
-
 void testcase() {
     int n;
     scanf("%lld", &n);
     string s;
     cin >> s;
-    map <char, char> prev_char = {{'0', '9'}, {'1', '0'}, {'2', '1'}, {'3', '2'}, {'4', '3'}, {'5', '4'}, {'6', '5'}, {'7', '6'}, {'8', '7'}, {'9', '8'}};
-    map <char, char> next_char;
-    for (auto x: prev_char) {
-        next_char[x.second] = x.first;
-    }
-    map <string, string> mp = {{"01", "2"}, {"12", "3"}, {"23", "4"}, {"34", "5"}, {"45", "6"}, {"56", "7"}, {"67", "8"}, {"78", "9"}, {"89", "0"}, {"90", "1"}};
-    change_string (s, "01", mp);
-    n = s.size();
-    string temp;
-    temp += s[0];
-    for (int i = 1; i < n; i++) {
-        int x = (int) temp.size() - 1;
-        while (x >= 0 && temp[x] == prev_char[s[i]]) {
-            temp.pop_back();
-            s[i] = next_char[s[i]];
-            x--;
+
+    vector <int> prev(n, -1);
+    vector <int> next(n, -1);
+    iota (prev.begin(), prev.end(), -1);
+    iota (next.begin(), next.end() - 1, 1);
+    // debug (prev);
+
+    vector <vector <int>> loc(10);
+    for (int i = 0; i < n - 1; i++) {
+        if (s[i + 1] == s[i] + 1 || (s[i] == '9' && s[i+1] == '0')) {
+            loc[s[i] - '0'].push_back(i);
         }
     }
-    cout << temp;
+
+    // debug (loc);
+
+    // repeat while operations keep happening
+    bool done = false;
+    vector <bool> deleted(n, false);
+
+    while (!done) {
+        done = true;
+
+        for (int i = 0; i < 10; i++) {
+            vector <int> temp = loc[i];
+            loc[i].clear();
+            for (auto ind: temp) {
+                if (deleted[ind]) continue;
+                bool continuing = false;
+                if (s[next[ind]] == s[ind] + 1 || (s[ind] == '9' && s[next[ind]] == '0')) {
+                    continuing = true;
+                }
+                if (!continuing) continue;
+
+                done = false;
+                // delete next one, replace this one
+                if (next[next[ind]] != -1) {
+                    prev[next[next[ind]]] = ind;
+                }
+
+                deleted[next[ind]] = true;
+                next[ind] = next[next[ind]];
+                s[ind] += 2;
+                if (s[ind] == '9' + 1) s[ind] = '0';
+                if (s[ind] == '9' + 2) s[ind] = '1';
+
+                // check condition for next and previous
+                if (s[next[ind]] == s[ind] + 1 || (s[ind] == '9' && s[next[ind]] == '0')) {
+                    loc[s[ind] - '0'].push_back (ind);
+                }
+                if (s[ind] == s[prev[ind]] + 1 || (s[prev[ind]] == '9' && s[ind] == '0')) {
+                    loc[s[prev[ind]] - '0'].push_back (prev[ind]);
+                }
+            }
+        }
+    }
+
+    // debug (deleted);
+
+    int ind = -1;
+    for (int i = 0; i < n; i++) {
+        if (!deleted[i]) {
+            ind = i;
+            break;
+        }
+    }
+
+    string ans;
+    while (ind != -1) {
+        ans += s[ind];
+        ind = next[ind];
+    }
+
+    cout << ans;
 }
 
 int32_t main () {
@@ -78,5 +99,3 @@ int32_t main () {
         printf("\n");
     }
 }
-
-

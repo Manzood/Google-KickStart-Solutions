@@ -1,4 +1,4 @@
-for ((i=43;;i++)) do
+for ((i=1;;i++)) do
 	echo $i
 	./gen $i > in
 	diff -w <(./C < in) <(./brute < in) || break
