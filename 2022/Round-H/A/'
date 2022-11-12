@@ -1,0 +1,38 @@
+#include "bits/stdc++.h"
+
+#ifdef local
+#include "custom/debugger.h"
+#else
+#define debug(...) 42;
+#endif
+
+using namespace std;
+#define int long long
+
+void solve([[maybe_unused]] int test) {
+    int l, n;
+    scanf("%lld%lld", &l, &n);
+    vector<int> a(n);
+    vector<char> c(n);
+    for (int i = 0; i < n; i++) {
+        scanf("%lld %c", &a[i], &c[i]);
+    }
+    int pos = 0;
+    int dir = 1;
+    int prev_dir = 1;
+    int ans = 0;
+    for (int i = 0; i < n; i++) {
+        dir = c[i] == 'C' ? 1 : 0;
+    }
+    printf("%lld", ans);
+}
+
+int32_t main() {
+    int t = 1;
+    cin >> t;
+    for (int tt = 1; tt <= t; tt++) {
+        printf("Case #%lld: ", tt);
+        solve(tt);
+        printf("\n");
+    }
+}
