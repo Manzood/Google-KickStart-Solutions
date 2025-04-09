@@ -1,88 +1,93 @@
 #include "bits/stdc++.h"
+
 #ifdef local
-    #include "custom/debugger.h"
+#include "custom/debugger.h"
 #else
-    #define debug(x) 42;
+#define debug(x) 42;
 #endif
+
 using namespace std;
 #define int long long
-const int mod = (int) 1e9 + 7;
 
-// problem seems to have far too many parts, maybe I'll come back to it later when I've learnt how to use the individual techniques
+constexpr int MOD = (int)1e9 + 7;
+constexpr int LOG = 30;
 
-// algorithm
-// precompute the values for all nodes, without conditions
-// find lca for the two nodes -- binary lifting?
-// get the value for the nodes
-// store the value in the answer array after taking modular inverse? Or something of the sort
-
-// I'll solve the lca problem myself
-
-int getpow(int a, int b) {
-    if (b == 0) return 1;
-    if (b == 1) return a;
-    if (b % 2 == 0) {
-        int t = getpow(a, b / 2);
-        return (t * t) % mod;
-    } else {
-        int t = getpow(a, (b - 1) / 2);
-        return (((a * t) % mod) * t) % mod;
-    }
+long long inv(long long a, long long m) {
+    return 1 < a ? m - inv(m % a, a) * m / a : 1;
 }
 
-// (a / b) % MOD = a * ((b ^ (MOD - 2)) % MOD; // ONLY if MOD is prime
-int divide(int a, int b) { return a * getpow(b, mod - 2) % mod; }
-
-// now, find lca (currently using binary lifting)
-int lca (int a, int b) {
-    int retval = 0;
-    // gotta think of how this works
-    // O(log(n) * log(n))
-    // binary search values, twice
-    // go through parent array, and binary search it
-    return retval;
+int getmod(int val) {
+    val %= MOD;
+    if (val < 0) val += MOD;
+    return val;
 }
 
-// dfs assigns the probablity of occurance of each individual node
-vector <bool> visited;
-void dfs (int node, vector <vector <int>>& adj, vector <int>& parent, vector <int>& prob, vector <int>& prob_not, vector <int>& a, vector <int>& b) {
-    if (visited[node]) return;
-    visited[node] = true;
-    // get the value of parent
+void dfs(int node, int par, vector<vector<int>>& adj, vector<int>& a,
+         vector<int>& b, vector<int>& prob, vector<int>& depth) {
     if (node != 0) {
-        prob[node] = prob[parent[node]] * a[node] + prob_not[parent[node]] * b[node];
-        // convert to inverse_mod
-        // can you take modulo if you have inverse mod?
-        prob_not[node] = 1000000 - prob[node];
+        prob[node] = (((prob[par] * a[node]) % MOD) +
+                      getmod(((int)1e6 - prob[par]) * b[node])) %
+                     MOD;
+        depth[node] = depth[par] + 1;
     }
-    for (auto u: adj[node]) {
-        dfs (u, adj, parent, prob, prob_not, a, b);
+    for (auto u : adj[node]) {
+        dfs(u, node, adj, a, b, prob, depth);
     }
 }
 
 void testcase() {
     int n, q;
     scanf("%lld%lld", &n, &q);
-    int k;
-    scanf("%lld", &k);
-    vector <int> parent(n, 0LL), a(n), b(n);
-    vector <vector <int>> adj (n);
-    visited.resize (n, false);
-    a[0] = b[0] = -1;
-    vector <int> prob (n, -1);
-    vector <int> prob_not (n, -1);
-    prob[0] = k;
-    prob_not[0] = 1000000 - k;
+    vector<int> a(n, 0), b(n, 0);
+    scanf("%lld\n", &a[0]);
+    vector<int> p(n, -1);
+    vector<vector<int>> adj(n);
     for (int i = 1; i < n; i++) {
-        scanf("%lld%lld%lld", &parent[i], &a[i], &b[i]);
-        adj[parent[i]].push_back (i);
+        scanf("%lld%lld%lld", &p[i], &a[i], &b[i]);
+        p[i]--;
+        adj[p[i]].push_back(i);
     }
-
-    // convert it into modular inverse, and keep using that for each intermediate step as well
-    // recursive function to find the probability every time??
+    vector<int> prob(n, 0), depth(n, 0);
+    dfs(0, -1, adj, a, b, prob, depth);
+    vector<vector<int>> lift(n, vector<int>(LOG, -1));
+    for (int i = 0; i < n; i++) lift[i][0] = p[i];
+    for (int i = 0; i < n; i++) {
+        for (int j = 1; j < LOG; j++) {
+            if (lift[i][j - 1] != -1) lift[i][j] = lift[lift[i][j - 1]][j - 1];
+        }
+    }
+    for (int query = 0; query < q; query++) {
+        int u, v;
+        scanf("%lld%lld", &u, &v);
+        u--, v--;
+        int ans = (prob[u] * prob[v]) % MOD;
+        if (depth[v] > depth[u]) swap(u, v);
+        int dist = depth[u] - depth[v];
+        for (int i = LOG - 1; i >= 0; i--) {
+            if ((1LL << i) > dist) continue;
+            u = lift[u][i];
+            dist -= (1LL << i);
+        }
+        if (u == v) {
+            // do something, v was an ancestor to u
+        } else {
+            // the answer is prob[u] * prob[v] / prob[lca]
+            int lca = u;
+            for (int i = LOG - 1; i >= 0; i--) {
+                if (lift[u][i] == -1) continue;
+                if (lift[u][i] == lift[v][i])
+                    lca = lift[u][i];
+                else {
+                    u = lift[u][i];
+                    v = lift[v][i];
+                }
+            }
+            (ans *= inv(lca, MOD)) %= MOD;
+        }
+    }
 }
 
-int32_t main () {
+int32_t main() {
     int t;
     cin >> t;
     for (int tt = 1; tt <= t; tt++) {
